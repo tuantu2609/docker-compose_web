@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: t123
+      MYSQL_DATABASE: webdb
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: node-server
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: t123
+      DB_NAME: webdb
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client 
+      dockerfile: Dockerfile
+    container_name: react-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
